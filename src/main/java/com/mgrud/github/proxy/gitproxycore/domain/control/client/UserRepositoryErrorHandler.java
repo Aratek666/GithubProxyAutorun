@@ -17,6 +17,9 @@ public class UserRepositoryErrorHandler extends DefaultResponseErrorHandler {
         if (response.getStatusCode() == HttpStatus.NOT_FOUND) {
             throw new UserNotFoundException("Given user name does not exist");
         }
+        if (response.getStatusCode() == HttpStatus.FORBIDDEN) {
+            throw new GithubApiClientException("API rate limit exceeded. API will be unlock at: " + response.getHeaders().get("x-ratelimit-reset"));
+        }
         if (response.getStatusCode().is4xxClientError()) {
             throw new GithubApiClientException("Occured Github api client exception");
         }

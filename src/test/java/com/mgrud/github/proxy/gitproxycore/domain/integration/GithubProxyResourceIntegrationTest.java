@@ -1,4 +1,4 @@
-package com.mgrud.github.proxy.gitproxycore.domain.boundary;
+package com.mgrud.github.proxy.gitproxycore.domain.integration;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,15 +45,15 @@ public class GithubProxyResourceIntegrationTest {
 
 
     @Test
-    public void testExistingUserWithOneRepositoryWithoutBranches()
+    public void testExistingUserWithRepositoryWithoutBranches()
             throws Exception {
 
         mvc.perform(get("/user/repositories")
                         .param("userName", "Aratek666")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].branches", empty()));
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[1].branches", empty()));
     }
 
     @Test
@@ -67,5 +67,18 @@ public class GithubProxyResourceIntegrationTest {
                 .andExpect(jsonPath("$", empty()));
     }
 
-    //TODO Ok Test ( create data at github)
+    @Test
+    public void testExistingUserRepositoryWithBranches()
+            throws Exception {
+
+        mvc.perform(get("/user/repositories")
+                        .param("userName", "Aratek666")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name", is("GtihubProxyTestRepo")))
+                .andExpect(jsonPath("$[0].ownerLogin", is("Aratek666")))
+                .andExpect(jsonPath("$[0].branches[0].name", is("main")))
+                .andExpect(jsonPath("$[0].branches[0].sha", is("38a6a3b16e5d1bf302f2b39c32bf7af194e05332")));
+    }
 }
