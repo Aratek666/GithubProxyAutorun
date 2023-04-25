@@ -40,25 +40,6 @@ public class GithubApiClient {
         return Arrays.asList(restTemplate.getForObject(String.format(GITHUB_BASE_URL + GITHUB_GET_USER_REPOSITORIES_URL, userName), GithubRepositoryDTO[].class));
     }
 
-    // Sorry for this comment (gonna remove it later) but i didnt know how to make contact with you, hope you gonna read that.
-    /* Referring to your Code Review comment " data is downloaded sequentially, not in parallel" : The following method performs parallel requests for
-     branches for given repositories in different threads, by using CompletableFuture.supplyAsync(). I could just use here Parallel stream which would be much more
-     easier to use rather than CompletableFuture, but I tend to use the second solution at my current job to be able to manage the pool of available threads.
-     If you want I can change that but at this moment it works fine, here are some example logs for query branches for three different repos:
-     2023-04-25T15:44:21.491+02:00 DEBUG 21148 --- [y-core-thread-1] o.s.web.client.RestTemplate              : HTTP GET https://api.github.com/repos/Aratek666/GtihubProxyTestRepo/branches
-     2023-04-25T15:44:21.491+02:00 DEBUG 21148 --- [y-core-thread-2] o.s.web.client.RestTemplate              : HTTP GET https://api.github.com/repos/Aratek666/TestAutoRUN/branches
-     2023-04-25T15:44:21.491+02:00 DEBUG 21148 --- [y-core-thread-0] o.s.web.client.RestTemplate              : HTTP GET https://api.github.com/repos/Aratek666/GithubProxyAutorun/branches
-     2023-04-25T15:44:21.491+02:00 DEBUG 21148 --- [y-core-thread-0] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
-     2023-04-25T15:44:21.491+02:00 DEBUG 21148 --- [y-core-thread-1] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
-     2023-04-25T15:44:21.491+02:00 DEBUG 21148 --- [y-core-thread-2] o.s.web.client.RestTemplate              : Accept=[application/json, application/*+json]
-     2023-04-25T15:44:21.708+02:00 DEBUG 21148 --- [y-core-thread-2] o.s.web.client.RestTemplate              : Response 200 OK
-     2023-04-25T15:44:21.708+02:00 DEBUG 21148 --- [y-core-thread-2] o.s.web.client.RestTemplate              : Reading to [com.mgrud.github.proxy.gitproxycore.domain.control.external.dto.GithubBranchDTO[]]
-     2023-04-25T15:44:21.923+02:00 DEBUG 21148 --- [y-core-thread-0] o.s.web.client.RestTemplate              : Response 200 OK
-     2023-04-25T15:44:21.923+02:00 DEBUG 21148 --- [y-core-thread-0] o.s.web.client.RestTemplate              : Reading to [com.mgrud.github.proxy.gitproxycore.domain.control.external.dto.GithubBranchDTO[]]
-     2023-04-25T15:44:21.994+02:00 DEBUG 21148 --- [y-core-thread-1] o.s.web.client.RestTemplate              : Response 200 OK
-     2023-04-25T15:44:21.994+02:00 DEBUG 21148 --- [y-core-thread-1] o.s.web.client.RestTemplate              : Reading to [com.mgrud.github.proxy.gitproxycore.domain.control.external.dto.GithubBranchDTO[]]
-     */
-
     public Map<String, List<GithubBranchWrapper>> getRepositoryBranches(Collection<GithubRepositoryDTO> repositoryDTOs) {
 
         Collection<CompletableFuture<Collection<GithubBranchWrapper>>> result = repositoryDTOs.stream()
