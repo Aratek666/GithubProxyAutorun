@@ -5,37 +5,55 @@ import com.mgrud.github.proxy.gitproxycore.domain.boundary.dto.GithubProxyBranch
 import com.mgrud.github.proxy.gitproxycore.domain.boundary.dto.GithubUserRepositoriesDTO;
 import com.mgrud.github.proxy.gitproxycore.domain.entity.GithubBranch;
 import com.mgrud.github.proxy.gitproxycore.domain.entity.GithubRepository;
-import com.mgrud.github.proxy.gitproxycore.domain.unit.data.TestDataPreparator;
 import org.junit.Test;
 import org.mapstruct.factory.Mappers;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class GithubProxyDTOMapperTest {
-    private final GithubProxyDTOMapper mapper = Mappers.getMapper(GithubProxyDTOMapper.class);
+    private static final String OWNER_LOGIN_VALUE = "TestOwnerLogin";
+    private static final String REPOSITORY_NAME = "TestName";
+    private static final String BRANCH_NAME_VALUE = "TestBranchName";
+    private static final String SHA_VALUE = "TestShaValue";
+    private static final GithubProxyDTOMapper mapper = Mappers.getMapper(GithubProxyDTOMapper.class);
 
 
     @Test
     public void testGithubRepositoryMappingToGithubUserRepositoriesDTO() {
-        GithubRepository entity = TestDataPreparator.getGithubRepositoryEntity();
+        GithubRepository entity = getGithubRepositoryEntity();
         GithubUserRepositoriesDTO dto = mapper.githubUserRepositoriesDTO(entity);
+        GithubUserRepositoriesDTO expectedValue = getExpectedGithubUserRepositoriesDTOValue();
 
-        assertEquals(dto.getName(), entity.getName());
-        assertEquals(dto.getOwnerLogin(), entity.getOwnerLogin());
-        assertEquals(dto.getBranches().size(), entity.getBranches().size());
-
-        dto.getBranches().forEach(branch -> assertBranch(entity.getBranches(), branch));
+        assertThat(dto).isEqualTo(expectedValue);
     }
 
-    private void assertBranch(Collection<GithubBranch> entityBranches, GithubProxyBranchDTO dto) {
-        Optional<GithubBranch> entityBranch = entityBranches.stream()
-                .filter(branch -> branch.getName().equals(dto.getName()))
-                .findFirst();
 
-        assertEquals(entityBranch.get().getSha(), dto.getSha());
+    private GithubRepository getGithubRepositoryEntity() {
+        GithubBranch githubBranch = GithubBranch.builder()
+                .name(BRANCH_NAME_VALUE)
+                .sha(SHA_VALUE)
+                .build();
+
+        return GithubRepository.builder()
+                .name(REPOSITORY_NAME)
+                .ownerLogin(OWNER_LOGIN_VALUE)
+                .branches(Collections.singletonList(githubBranch))
+                .build();
+    }
+
+    private GithubUserRepositoriesDTO getExpectedGithubUserRepositoriesDTOValue() {
+        GithubProxyBranchDTO branchDTOS = GithubProxyBranchDTO.builder()
+                .name(BRANCH_NAME_VALUE)
+                .sha(SHA_VALUE)
+                .build();
+
+        return GithubUserRepositoriesDTO.builder()
+                .name(REPOSITORY_NAME)
+                .ownerLogin(OWNER_LOGIN_VALUE)
+                .branches(Collections.singletonList(branchDTOS))
+                .build();
     }
 
 
