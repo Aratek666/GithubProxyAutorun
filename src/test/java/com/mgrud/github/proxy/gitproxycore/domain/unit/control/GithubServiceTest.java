@@ -12,11 +12,8 @@ import com.mgrud.github.proxy.gitproxycore.domain.control.external.dto.GithubRep
 import com.mgrud.github.proxy.gitproxycore.domain.entity.GithubBranch;
 import com.mgrud.github.proxy.gitproxycore.domain.entity.GithubRepository;
 import com.mgrud.github.proxy.gitproxycore.infrastructure.exception.handler.UserNotFoundException;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.mockito.Mockito;
 
 import java.util.*;
 
@@ -25,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringRunner.class)
 public class GithubServiceTest {
 
     private static final String USER_1_REPO_2_BRANCHES_URL_VALUE = "/ForkRepository/branches";
@@ -40,25 +36,16 @@ public class GithubServiceTest {
     private static final String USER_2_NAME_VALUE = "UserNameWhoHasOnlyForkRepo";
     private static final String USER_3_NAME_VALUE = "UserNameWhoHasNoRepo";
     private static final String USER_4_NAME_VALUE = "NotExistingUser";
-    @MockBean
-    GithubApiClient mockApiClient;
-    GithubDTOMapper dtoMapper;
-    GithubService githubService;
+    GithubApiClient mockApiClient = Mockito.mock(GithubApiClient.class);
+    GithubDTOMapper dtoMapper = new GithubDTOMapperImpl();
+    GithubService githubService = new GithubService(mockApiClient, dtoMapper);
 
-
-    @Before
-    public void init() {
-        dtoMapper = new GithubDTOMapperImpl();
-        given(mockApiClient.getUserRepositories(USER_1_NAME_VALUE)).willReturn(getMockUserRepositoriesForUser1());
-        given(mockApiClient.getUserRepositories(USER_2_NAME_VALUE)).willReturn(getMockUserRepositoriesForUser2());
-        given(mockApiClient.getUserRepositories(USER_3_NAME_VALUE)).willReturn(Collections.emptyList());
-        given(mockApiClient.getUserRepositories(USER_4_NAME_VALUE)).willThrow(UserNotFoundException.class);
-        given(mockApiClient.getRepositoryBranches(any())).willReturn(getMockRepositoryBranchDTOsForUser1());
-        githubService = new GithubService(mockApiClient, dtoMapper);
-    }
 
     @Test
     public void testGetNoForkRepositoriesForUserWhoHasOneForkRepoAndOneNoForkRepo() {
+        given(mockApiClient.getUserRepositories(USER_1_NAME_VALUE)).willReturn(getMockUserRepositoriesForUser1());
+        given(mockApiClient.getRepositoryBranches(any())).willReturn(getMockRepositoryBranchDTOsForUser1());
+
         Collection<GithubRepository> githubRepositories = githubService.getUserNoForkRepositories(USER_1_NAME_VALUE);
         Collection<GithubRepository> expectedRepositories = getExpectedGithubRepositoriesForUser1();
 
@@ -67,18 +54,24 @@ public class GithubServiceTest {
 
     @Test
     public void testGetNoForkRepositoriesForUserWhoHasOnlyForkRepo() {
+        given(mockApiClient.getUserRepositories(USER_2_NAME_VALUE)).willReturn(getMockUserRepositoriesForUser2());
+
         Collection<GithubRepository> githubRepositories = githubService.getUserNoForkRepositories(USER_2_NAME_VALUE);
         assertThat(githubRepositories).isEmpty();
     }
 
     @Test
     public void testGetNoForkRepositoriesForUserWhoHasNoRepo() {
+        given(mockApiClient.getUserRepositories(USER_3_NAME_VALUE)).willReturn(Collections.emptyList());
+
         Collection<GithubRepository> githubRepositories = githubService.getUserNoForkRepositories(USER_3_NAME_VALUE);
         assertThat(githubRepositories).isEmpty();
     }
 
     @Test
     public void testGetNoForkRepositoriesForUserWhoIsNotExist() {
+        given(mockApiClient.getUserRepositories(USER_4_NAME_VALUE)).willThrow(UserNotFoundException.class);
+
         assertThatThrownBy(() -> githubService.getUserNoForkRepositories(USER_4_NAME_VALUE)).isInstanceOf(UserNotFoundException.class);
     }
 

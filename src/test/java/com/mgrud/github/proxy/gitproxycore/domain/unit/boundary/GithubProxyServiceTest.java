@@ -8,11 +8,8 @@ import com.mgrud.github.proxy.gitproxycore.domain.boundary.dto.GithubUserReposit
 import com.mgrud.github.proxy.gitproxycore.domain.control.GithubService;
 import com.mgrud.github.proxy.gitproxycore.domain.entity.GithubBranch;
 import com.mgrud.github.proxy.gitproxycore.domain.entity.GithubRepository;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.mockito.Mockito;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -21,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringRunner.class)
 public class GithubProxyServiceTest {
 
     private static final String OWNER_LOGIN_VALUE = "TestOwnerLogin";
@@ -29,19 +25,14 @@ public class GithubProxyServiceTest {
     private static final String BRANCH_NAME_VALUE = "TestBranchName";
     private static final String SHA_VALUE = "TestShaValue";
 
-    @MockBean
-    private GithubService githubService;
-    private GithubProxyService githubProxyService;
-
-    @Before
-    public void init() {
-        GithubProxyDTOMapper githubProxyDTOMapper = new GithubProxyDTOMapperImpl();
-        given(githubService.getUserNoForkRepositories(any())).willReturn(getMockUserRepositories());
-        githubProxyService = new GithubProxyService(githubService, githubProxyDTOMapper);
-    }
+    private final GithubService githubService = Mockito.mock(GithubService.class);
+    private final GithubProxyDTOMapper githubProxyDTOMapper = new GithubProxyDTOMapperImpl();
+    private final GithubProxyService githubProxyService = new GithubProxyService(githubService, githubProxyDTOMapper);
 
     @Test
     public void testGetUserRepositories() {
+        given(githubService.getUserNoForkRepositories(any())).willReturn(getMockUserRepositories());
+
         Collection<GithubUserRepositoriesDTO> repositoriesDTOs = githubProxyService.getRepositoriesByUserName("UserName");
         Collection<GithubUserRepositoriesDTO> exptectedRepositoriesDTOs = getExpectedGithubUserRepositoriesDTOValue();
 

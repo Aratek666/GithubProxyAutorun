@@ -4,11 +4,8 @@ import com.mgrud.github.proxy.gitproxycore.domain.boundary.GithubProxyResource;
 import com.mgrud.github.proxy.gitproxycore.domain.boundary.GithubProxyService;
 import com.mgrud.github.proxy.gitproxycore.domain.boundary.dto.GithubProxyBranchDTO;
 import com.mgrud.github.proxy.gitproxycore.domain.boundary.dto.GithubUserRepositoriesDTO;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.mockito.Mockito;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@RunWith(SpringRunner.class)
 public class GithubProxyResourceTest {
 
     private static final String OWNER_LOGIN_VALUE = "TestOwnerLogin";
@@ -26,18 +22,13 @@ public class GithubProxyResourceTest {
     private static final String BRANCH_NAME_VALUE = "TestBranchName";
     private static final String SHA_VALUE = "TestShaValue";
 
-    @MockBean
-    private GithubProxyService githubProxyService;
-    private GithubProxyResource githubProxyResource;
-
-    @Before
-    public void init() {
-        given(githubProxyService.getRepositoriesByUserName(any())).willReturn(getMockUserRepositories());
-        githubProxyResource = new GithubProxyResource(githubProxyService);
-    }
+    private GithubProxyService githubProxyService = Mockito.mock(GithubProxyService.class);
+    private GithubProxyResource githubProxyResource = new GithubProxyResource(githubProxyService);
 
     @Test
     public void testGetUserRepositories() {
+        given(githubProxyService.getRepositoriesByUserName(any())).willReturn(getMockUserRepositories());
+
         Collection<GithubUserRepositoriesDTO> repositoriesDTOs = githubProxyService.getRepositoriesByUserName("UserName");
         Collection<GithubUserRepositoriesDTO> exptectedRepositoriesDTOs = getExpectedGithubUserRepositoriesDTOValue();
 
