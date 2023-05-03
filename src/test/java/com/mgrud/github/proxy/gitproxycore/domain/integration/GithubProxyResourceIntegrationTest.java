@@ -18,6 +18,9 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -50,6 +53,7 @@ public class GithubProxyResourceIntegrationTest {
     private static final String GET_REPOSITORIES_URL = "/user/repositories";
     private static final String GET_USER_REPOSITORIES_GITHUB_API_URL = "/users/%s/repos";
     private static final String GET_USER_REPOSITORIES_BRANCHES_GITHUB_API_URL = "/repos/%s/%s/branches";
+    private static final int PORT = 8082;
     @Autowired
     private MockMvc mvc;
 
@@ -60,38 +64,38 @@ public class GithubProxyResourceIntegrationTest {
 
     @Before
     public void init() {
-        wireMockServer = new WireMockServer(new WireMockConfiguration().port(8082));
+        wireMockServer = new WireMockServer(new WireMockConfiguration().port(PORT));
         wireMockServer.start();
-        WireMock.configureFor("localhost", 8082);
+        WireMock.configureFor("localhost", PORT);
     }
 
     @Test
     public void testGetRepositoriesForUserWithoutRepositories() throws Exception {
         stubFor(WireMock.get(urlEqualTo(String.format(GET_USER_REPOSITORIES_GITHUB_API_URL, EXISTING_USER_NAME_WITHOUT_REPOSITORIES)))
                 .willReturn(ok()
-                        .withStatus(200)
                         .withJsonBody(objectMapper.valueToTree(Collections.emptyList()))
-                        .withHeader("Content-Type", "application/json")));
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)));
 
         this.mvc.perform(get(GET_REPOSITORIES_URL).queryParam(USER_NAME_QUERY_PARAM, EXISTING_USER_NAME_WITHOUT_REPOSITORIES))
-                .andExpect(status().is(200))
+                .andExpect(status().is(HttpStatus.OK.value()))
                 .andExpect(content().json(objectMapper.writeValueAsString(Collections.emptyList())));
     }
 
     @Test
     public void testGetRepositoriesWithDefinedAcceptHeaderToXML() throws Exception {
-
-        this.mvc.perform(get(GET_REPOSITORIES_URL).header("Accept", "application/xml"))
-                .andExpect(status().is(406));
+        this.mvc.perform(get(GET_REPOSITORIES_URL).header(HttpHeaders.ACCEPT, MediaType.APPLICATION_XML_VALUE))
+                .andExpect(status().is(HttpStatus.NOT_ACCEPTABLE.value()))
+                .andExpect(content().json(objectMapper.writeValueAsString(getErrorResponseDTO("Only following media types: [application/json] are supported",
+                        ErrorResponseDTO.ErrorCodeEnum.NotSupportedMediaType, HttpStatus.NOT_ACCEPTABLE.value()))));
     }
 
     @Test
     public void testGetRepositoriesWithNotDefinedUserNameParam() throws Exception {
 
         this.mvc.perform(get(GET_REPOSITORIES_URL))
-                .andExpect(status().is(400))
+                .andExpect(status().is(HttpStatus.BAD_REQUEST.value()))
                 .andExpect(content().json(objectMapper.writeValueAsString(getErrorResponseDTO("Parameter is missing: userName",
-                        ErrorResponseDTO.ErrorCodeEnum.MissingParameter))));
+                        ErrorResponseDTO.ErrorCodeEnum.MissingParameter, HttpStatus.BAD_REQUEST.value()))));
     }
 
     @Test
@@ -100,9 +104,9 @@ public class GithubProxyResourceIntegrationTest {
                 .willReturn(serverError()));
 
         this.mvc.perform(get(GET_REPOSITORIES_URL).queryParam(USER_NAME_QUERY_PARAM, "ServerError"))
-                .andExpect(status().is(500))
+                .andExpect(status().is(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(content().json(objectMapper.writeValueAsString(getErrorResponseDTO("Occured Github api server exception",
-                        ErrorResponseDTO.ErrorCodeEnum.GithubApiError))));
+                        ErrorResponseDTO.ErrorCodeEnum.GithubApiError, HttpStatus.INTERNAL_SERVER_ERROR.value()))));
     }
 
     @Test
@@ -111,9 +115,9 @@ public class GithubProxyResourceIntegrationTest {
                 .willReturn(badRequest()));
 
         this.mvc.perform(get(GET_REPOSITORIES_URL).queryParam(USER_NAME_QUERY_PARAM, "BadRequest"))
-                .andExpect(status().is(500))
+                .andExpect(status().is(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(content().json(objectMapper.writeValueAsString(getErrorResponseDTO("Occured Github api client exception",
-                        ErrorResponseDTO.ErrorCodeEnum.GithubApiError))));
+                        ErrorResponseDTO.ErrorCodeEnum.GithubApiError, HttpStatus.INTERNAL_SERVER_ERROR.value()))));
     }
 
     @Test
@@ -122,26 +126,27 @@ public class GithubProxyResourceIntegrationTest {
                 .willReturn(forbidden().withHeader("x-ratelimit-reset", "1000")));
 
         this.mvc.perform(get(GET_REPOSITORIES_URL).queryParam(USER_NAME_QUERY_PARAM, "Forbidden"))
-                .andExpect(status().is(500))
+                .andExpect(status().is(HttpStatus.INTERNAL_SERVER_ERROR.value()))
                 .andExpect(content().json(objectMapper.writeValueAsString(getErrorResponseDTO("API rate limit exceeded. API will be unlock at: [1000]",
-                        ErrorResponseDTO.ErrorCodeEnum.GithubApiError))));
+                        ErrorResponseDTO.ErrorCodeEnum.GithubApiError, HttpStatus.INTERNAL_SERVER_ERROR.value()))));
     }
 
     @Test
     public void testGetRepositoriesForNotExistingUserName() throws Exception {
         stubFor(WireMock.get(urlEqualTo(String.format(GET_USER_REPOSITORIES_GITHUB_API_URL, NOT_EXISTING_USER_NAME)))
-                .willReturn(ok().withStatus(404)));
+                .willReturn(ok().withStatus(HttpStatus.NOT_FOUND.value())));
 
         this.mvc.perform(get(GET_REPOSITORIES_URL).queryParam(USER_NAME_QUERY_PARAM, NOT_EXISTING_USER_NAME))
-                .andExpect(status().is(404))
+                .andExpect(status().is(HttpStatus.NOT_FOUND.value()))
                 .andExpect(content().json(objectMapper.writeValueAsString(getErrorResponseDTO("Given user name does not exist",
-                        ErrorResponseDTO.ErrorCodeEnum.UserNameNotFound))));
+                        ErrorResponseDTO.ErrorCodeEnum.UserNameNotFound, HttpStatus.NOT_FOUND.value()))));
     }
 
-    private ErrorResponseDTO getErrorResponseDTO(String message, ErrorResponseDTO.ErrorCodeEnum errorCodeEnum) {
+    private ErrorResponseDTO getErrorResponseDTO(String message, ErrorResponseDTO.ErrorCodeEnum errorCodeEnum, int statusCode) {
         return ErrorResponseDTO.builder()
                 .message(message)
                 .errorCode(errorCodeEnum)
+                .statusCode(statusCode)
                 .build();
     }
 
@@ -149,17 +154,15 @@ public class GithubProxyResourceIntegrationTest {
     public void testGetRepositoriesForUserWithOneForkAndOneNoForkRepository() throws Exception {
         stubFor(WireMock.get(urlEqualTo(String.format(GET_USER_REPOSITORIES_GITHUB_API_URL, EXISTING_USER_NAME)))
                 .willReturn(ok()
-                        .withStatus(200)
                         .withJsonBody(objectMapper.valueToTree(getMockGithubRepository()))
-                        .withHeader("Content-Type", "application/json")));
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)));
         stubFor(WireMock.get(urlEqualTo(String.format(GET_USER_REPOSITORIES_BRANCHES_GITHUB_API_URL, EXISTING_USER_NAME, NO_FORK_REPOSITORY_NAME)))
                 .willReturn(ok()
-                        .withStatus(200)
                         .withJsonBody(objectMapper.valueToTree(getMockGithubNoForkRepositoryBranches()))
-                        .withHeader("Content-Type", "application/json")));
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)));
 
         this.mvc.perform(get(GET_REPOSITORIES_URL).queryParam(USER_NAME_QUERY_PARAM, EXISTING_USER_NAME))
-                .andExpect(status().is(200))
+                .andExpect(status().is(HttpStatus.OK.value()))
                 .andExpect(content().json(objectMapper.writeValueAsString(getResponseExpectedDataForExistingUser())));
     }
 

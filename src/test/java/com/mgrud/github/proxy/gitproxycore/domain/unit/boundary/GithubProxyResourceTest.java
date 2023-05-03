@@ -29,7 +29,7 @@ public class GithubProxyResourceTest {
     public void testGetUserRepositories() {
         given(githubProxyService.getRepositoriesByUserName(any())).willReturn(getMockUserRepositories());
 
-        Collection<GithubUserRepositoriesDTO> repositoriesDTOs = githubProxyService.getRepositoriesByUserName("UserName");
+        Collection<GithubUserRepositoriesDTO> repositoriesDTOs = githubProxyResource.getRepositoriesByUserName("UserName");
         Collection<GithubUserRepositoriesDTO> exptectedRepositoriesDTOs = getExpectedGithubUserRepositoriesDTOValue();
 
         assertThat(repositoriesDTOs).containsAll(exptectedRepositoriesDTOs);

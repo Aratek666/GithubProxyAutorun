@@ -29,6 +29,7 @@ public class GlobalExceptionHandlerTest {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.UserNameNotFound)
                 .message(userNotFoundException.getMessage())
+                .statusCode(HttpStatus.NOT_FOUND.value())
                 .build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
@@ -45,6 +46,7 @@ public class GlobalExceptionHandlerTest {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.GithubApiError)
                 .message(githubApiClientException.getMessage())
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
@@ -61,6 +63,7 @@ public class GlobalExceptionHandlerTest {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.GithubApiError)
                 .message(githubApiServerException.getMessage())
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
@@ -79,6 +82,7 @@ public class GlobalExceptionHandlerTest {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.MissingParameter)
                 .message("Parameter is missing: " + missingParameterException.getParameterName())
+                .statusCode(HttpStatus.BAD_REQUEST.value())
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
