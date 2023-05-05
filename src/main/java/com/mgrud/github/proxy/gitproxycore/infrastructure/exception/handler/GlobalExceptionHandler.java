@@ -1,7 +1,5 @@
 package com.mgrud.github.proxy.gitproxycore.infrastructure.exception.handler;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mgrud.github.proxy.gitproxycore.domain.boundary.dto.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -57,7 +55,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
-    public ResponseEntity handleHttpMediaTypeNotAcceptableExceptionException(HttpMediaTypeNotAcceptableException ex) {
+    private ResponseEntity<ErrorResponseDTO> handleHttpMediaTypeNotAcceptableExceptionException(HttpMediaTypeNotAcceptableException ex) {
 
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.NotSupportedMediaType)
@@ -65,14 +63,8 @@ public class GlobalExceptionHandler {
                 .statusCode(HttpStatus.NOT_ACCEPTABLE.value())
                 .build();
 
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        try {
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
-                    .contentType(MediaType.APPLICATION_JSON_UTF8)
-                    .body(objectMapper.writeValueAsString(errorResponse));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .body(errorResponse);
     }
 }
