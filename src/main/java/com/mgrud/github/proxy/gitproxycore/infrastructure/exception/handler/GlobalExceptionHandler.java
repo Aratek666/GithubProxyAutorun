@@ -2,7 +2,9 @@ package com.mgrud.github.proxy.gitproxycore.infrastructure.exception.handler;
 
 import com.mgrud.github.proxy.gitproxycore.domain.boundary.dto.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,6 +18,7 @@ public class GlobalExceptionHandler {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.UserNameNotFound)
                 .message(ex.getMessage())
+                .statusCode(HttpStatus.NOT_FOUND.value())
                 .build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
@@ -25,6 +28,7 @@ public class GlobalExceptionHandler {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.GithubApiError)
                 .message(ex.getMessage())
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
@@ -34,6 +38,7 @@ public class GlobalExceptionHandler {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.GithubApiError)
                 .message(ex.getMessage())
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
@@ -44,7 +49,22 @@ public class GlobalExceptionHandler {
         ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
                 .errorCode(ErrorResponseDTO.ErrorCodeEnum.MissingParameter)
                 .message("Parameter is missing: " + ex.getParameterName())
+                .statusCode(HttpStatus.BAD_REQUEST.value())
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    private ResponseEntity<ErrorResponseDTO> handleHttpMediaTypeNotAcceptableExceptionException(HttpMediaTypeNotAcceptableException ex) {
+
+        ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
+                .errorCode(ErrorResponseDTO.ErrorCodeEnum.NotSupportedMediaType)
+                .message("Only following media types: " + ex.getSupportedMediaTypes() + " are supported")
+                .statusCode(HttpStatus.NOT_ACCEPTABLE.value())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                .body(errorResponse);
     }
 }

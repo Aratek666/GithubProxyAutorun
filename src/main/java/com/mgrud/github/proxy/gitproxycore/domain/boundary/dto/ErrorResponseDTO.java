@@ -8,11 +8,13 @@ import lombok.Data;
 public class ErrorResponseDTO {
     private ErrorCodeEnum errorCode;
     private String message;
+    private int statusCode;
 
 
     public enum ErrorCodeEnum {
         UserNameNotFound,
         MissingParameter,
         GithubApiError,
+        NotSupportedMediaType
     }
 }
